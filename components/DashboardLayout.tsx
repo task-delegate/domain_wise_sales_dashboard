@@ -75,8 +75,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         const existingDomainData = prev[domain];
         const existingData = existingDomainData?.data || [];
 
-        // Use mergeAndDeduplicateData from supabase utils
-        const consolidatedData = mergeAndDeduplicateData(existingData, newData, newMapping);
+        // Use mergeAndDeduplicateData from supabase utils (pass domain for domain-specific logic)
+        const consolidatedData = mergeAndDeduplicateData(existingData, newData, newMapping, domain);
         const addedCount = consolidatedData.length - existingData.length;
 
         console.log(`Added ${addedCount} new unique rows for domain ${domain}. Total rows: ${consolidatedData.length}`);
@@ -87,7 +87,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
       // Save to Supabase immediately after state update
       const updatedDomainData = { ...allData[domain], data: newData, mapping: newMapping };
       if (allData[domain]) {
-        const consolidated = mergeAndDeduplicateData(allData[domain].data, newData, newMapping);
+        const consolidated = mergeAndDeduplicateData(allData[domain].data, newData, newMapping, domain);
         updatedDomainData.data = consolidated;
       }
 
