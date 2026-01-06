@@ -6,7 +6,7 @@ import UploadModal from './UploadModal';
 import DeleteDataModal from './DeleteDataModal';
 import PPTGeneratorPage from './PPTGeneratorPage';
 import { AllData, DomainData, OrderData, ColumnMapping } from '../types';
-import { supabase } from '../utils/supabase';
+import { supabase, saveDomainData, loadDomainData, mergeAndDeduplicateData, getUserDomains, deleteDomainData } from '../utils/supabase';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
@@ -14,7 +14,6 @@ interface DashboardLayoutProps {
 
 type View = 'Dashboard' | 'PPT';
 
-// FIX: Removed apiKey prop drilling. The Gemini API client will now be instantiated with an environment variable at the point of use.
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   const UPLOAD_DOMAINS = ["Myntra", "Amazon", "Flipkart", "AJIO", "Nykaa"];
   const SIDEBAR_DOMAINS = ["All Domains", ...UPLOAD_DOMAINS];
@@ -25,128 +24,155 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<View>('Dashboard');
+  const [userId, setUserId] = useState<string | null>(null);
 
+  // Initialize userId from localStorage or generate a temporary one
   useEffect(() => {
-    const loadData = async () => {
+    let storedUserId = localStorage.getItem('userId');
+    if (!storedUserId) {
+      storedUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('userId', storedUserId);
+    }
+    setUserId(storedUserId);
+  }, []);
+
+  // Load data from Supabase when userId is set
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadAllData = async () => {
       try {
-        const { data, error } = await supabase.from('dashboard_data').select('*');
-        if (error) throw error;
+        const domains = await getUserDomains(userId);
         const loadedData: AllData = {};
-        data.forEach((row: any) => {
-          loadedData[row.domain] = { data: row.data, mapping: row.mapping };
-        });
+
+        for (const domain of domains) {
+          const domainData = await loadDomainData(userId, domain);
+          if (domainData) {
+            loadedData[domain] = domainData;
+          }
+        }
+
         setAllData(loadedData);
+        console.log(`Loaded data for ${domains.length} domains from Supabase`);
       } catch (error) {
-        console.error("Could not load data from Supabase", error);
+        console.error("Could not load data from Supabase:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    loadData();
-  }, []);
 
-  useEffect(() => {
-    const saveData = async () => {
-      if (isLoading) return;
-      try {
-        const promises = Object.entries(allData).map(([domain, domainData]) =>
-          supabase.from('dashboard_data').upsert({
-            domain,
-            data: domainData.data,
-            mapping: domainData.mapping,
-          })
-        );
-        await Promise.all(promises);
-      } catch (error) {
-        console.error("Could not save data to Supabase", error);
-      }
-    };
-    saveData();
-  }, [allData, isLoading]);
+    loadAllData();
+  }, [userId]);
 
-  const handleFileUpload = (domain: string, newData: OrderData[], newMapping: ColumnMapping) => {
-    setAllData(prev => {
-      const existingDomainData = prev[domain];
-      const existingData = existingDomainData?.data || [];
-
-      // Helper to create a consistent, sorted string from a row object for accurate duplication checks
-      const rowToString = (row: OrderData): string => {
-        return JSON.stringify(Object.entries(row).sort((a, b) => a[0].localeCompare(b[0])));
-      };
-
-      // Create a set of all known rows for efficient duplicate checking.
-      const allKnownRows = new Set(existingData.map(rowToString));
-
-      const uniqueNewData = newData.filter(row => {
-        const rowString = rowToString(row);
-        // Check if the row already exists in our dataset.
-        if (allKnownRows.has(rowString)) {
-          return false; 
-        }
-        // Add the new unique row to the set to handle duplicates within the same uploaded file.
-        allKnownRows.add(rowString); 
-        return true;
-      });
-
-      console.log(`Added ${uniqueNewData.length} new unique rows for domain ${domain}.`);
-
-      const consolidatedData = [...existingData, ...uniqueNewData];
-      
-      return { ...prev, [domain]: { data: consolidatedData, mapping: newMapping } };
-    });
-    setActiveDomain(domain);
-    setCurrentView('Dashboard');
-  };
-
-
-  const handleDataDelete = (domain: string, year: number, month: number) => {
-    if (domain === 'All Domains' && month === -1 && year) {
-        setAllData(prev => {
-            const nextState = { ...prev };
-            for(const dom in nextState) {
-                const domainState = nextState[dom];
-                 if (!domainState) continue;
-                 const { data, mapping } = domainState;
-                 if (!mapping.date) continue;
-
-                 const newData = data.filter(row => {
-                     const date = new Date(row[mapping.date!] as string);
-                     if (isNaN(date.getTime())) return true;
-                     return date.getFullYear() !== year;
-                 });
-                 nextState[dom] = { ...domainState, data: newData };
-            }
-            return nextState;
-        });
-        return;
-    }
-
-
-    if (domain === 'All Domains') {
-      setAllData({});
+  const handleFileUpload = async (domain: string, newData: OrderData[], newMapping: ColumnMapping) => {
+    if (!userId) {
+      alert('User ID not initialized. Please refresh the page.');
       return;
     }
 
-    setAllData(prev => {
-      const domainState = prev[domain];
-      if (!domainState) return prev;
-      
-      const { data, mapping } = domainState;
-      if (!mapping.date) return prev;
+    try {
+      setAllData(prev => {
+        const existingDomainData = prev[domain];
+        const existingData = existingDomainData?.data || [];
 
-      const newData = data.filter(row => {
-        const date = new Date(row[mapping.date!] as string);
-        if (isNaN(date.getTime())) return true;
-        
-        const matchesYear = date.getFullYear() === year;
-        // month is -1 for "All Months"
-        const matchesMonth = month === -1 ? true : date.getMonth() === month;
+        // Use mergeAndDeduplicateData from supabase utils
+        const consolidatedData = mergeAndDeduplicateData(existingData, newData, newMapping);
+        const addedCount = consolidatedData.length - existingData.length;
 
-        return !(matchesYear && matchesMonth);
+        console.log(`Added ${addedCount} new unique rows for domain ${domain}. Total rows: ${consolidatedData.length}`);
+
+        return { ...prev, [domain]: { data: consolidatedData, mapping: newMapping } };
       });
+
+      // Save to Supabase immediately after state update
+      const updatedDomainData = { ...allData[domain], data: newData, mapping: newMapping };
+      if (allData[domain]) {
+        const consolidated = mergeAndDeduplicateData(allData[domain].data, newData, newMapping);
+        updatedDomainData.data = consolidated;
+      }
+
+      await saveDomainData(userId, domain, updatedDomainData);
       
-      return { ...prev, [domain]: { ...domainState, data: newData } };
-    });
+      setActiveDomain(domain);
+      setCurrentView('Dashboard');
+    } catch (error) {
+      console.error('Error uploading data:', error);
+      alert('Failed to save data. Please try again.');
+    }
+  };
+
+
+  const handleDataDelete = async (domain: string, year: number, month: number) => {
+    if (!userId) return;
+
+    try {
+      if (domain === 'All Domains' && month === -1 && year) {
+        setAllData(prev => {
+          const nextState = { ...prev };
+          for (const dom in nextState) {
+            const domainState = nextState[dom];
+            if (!domainState) continue;
+            const { data, mapping } = domainState;
+            if (!mapping.date) continue;
+
+            const newData = data.filter(row => {
+              const date = new Date(row[mapping.date!] as string);
+              if (isNaN(date.getTime())) return true;
+              return date.getFullYear() !== year;
+            });
+            nextState[dom] = { ...domainState, data: newData };
+          }
+          return nextState;
+        });
+
+        // Save all updated domains to Supabase
+        for (const dom of Object.keys(allData)) {
+          const updatedDomainData = allData[dom];
+          if (updatedDomainData) {
+            await saveDomainData(userId, dom, updatedDomainData);
+          }
+        }
+        return;
+      }
+
+      if (domain === 'All Domains') {
+        setAllData({});
+        // Delete all domains from Supabase
+        for (const dom of Object.keys(allData)) {
+          await deleteDomainData(userId, dom);
+        }
+        return;
+      }
+
+      setAllData(prev => {
+        const domainState = prev[domain];
+        if (!domainState) return prev;
+
+        const { data, mapping } = domainState;
+        if (!mapping.date) return prev;
+
+        const newData = data.filter(row => {
+          const date = new Date(row[mapping.date!] as string);
+          if (isNaN(date.getTime())) return true;
+
+          const matchesYear = date.getFullYear() === year;
+          const matchesMonth = month === -1 ? true : date.getMonth() === month;
+
+          return !(matchesYear && matchesMonth);
+        });
+
+        return { ...prev, [domain]: { ...domainState, data: newData } };
+      });
+
+      // Save updated data to Supabase
+      const updatedDomainData = allData[domain];
+      if (updatedDomainData) {
+        await saveDomainData(userId, domain, updatedDomainData);
+      }
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      alert('Failed to delete data. Please try again.');
+    }
   };
 
   const currentDomainData = useMemo<DomainData | null>((() => {
