@@ -388,17 +388,28 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
 
       console.log(`Upserting ${rowsToInsert.length} rows with conflict columns: ${conflictColumns}`);
       
-      // Upsert will automatically handle duplicates based on UNIQUE constraint
-      const { error, data } = await supabase
-        .from(tableName)
-        .upsert(rowsToInsert, { onConflict: conflictColumns });
+      // Batch insert in chunks to avoid timeout - Supabase has request limits
+      const BATCH_SIZE = 500;
+      let totalInserted = 0;
+      
+      for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
+        const batch = rowsToInsert.slice(i, i + BATCH_SIZE);
+        console.log(`Upserting batch ${Math.floor(i / BATCH_SIZE) + 1} with ${batch.length} rows...`);
+        
+        const { error, data } = await supabase
+          .from(tableName)
+          .upsert(batch, { onConflict: conflictColumns });
 
-      if (error) {
-        console.error(`Supabase error for ${tableName}:`, error);
-        throw new Error(`Failed to save to ${domain}: ${error.message}`);
+        if (error) {
+          console.error(`Supabase error for ${tableName} batch:`, error);
+          throw new Error(`Failed to save batch to ${domain}: ${error.message}`);
+        }
+
+        totalInserted += batch.length;
+        console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} complete. Total: ${totalInserted}/${rowsToInsert.length}`);
       }
 
-      console.log(`Successfully saved data for ${domain}. Response:`, data);
+      console.log(`Successfully saved ${totalInserted} rows for ${domain}`);
     } else {
       // Fallback for unknown domains - use generic table
       const { error } = await supabase
