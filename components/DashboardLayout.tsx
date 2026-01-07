@@ -95,9 +95,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
       
       setActiveDomain(domain);
       setCurrentView('Dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading data:', error);
-      alert('Failed to save data. Please try again.');
+      const errorMessage = error?.message || 'Failed to save data. Please try again.';
+      alert(errorMessage);
     }
   };
 

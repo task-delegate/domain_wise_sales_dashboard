@@ -340,7 +340,16 @@ const transformRowData = (row: OrderData, domain: string): any => {
 // Save domain data to domain-specific Supabase table
 export const saveDomainData = async (userId: string, domain: string, domainData: DomainData) => {
   try {
+    if (!userId) {
+      throw new Error('User ID is required to save data');
+    }
+
+    if (!domainData || !domainData.data || domainData.data.length === 0) {
+      throw new Error('No data provided to save');
+    }
+
     const tableName = getDomainTableName(domain);
+    console.log(`Saving ${domainData.data.length} rows to table: ${tableName}`);
     
     // For domain-specific tables, we need to transform the data
     if (tableName !== 'domain_data') {
@@ -352,6 +361,11 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
         };
       });
 
+      // Validate that we have rows to insert
+      if (rowsToInsert.length === 0) {
+        throw new Error('No rows to insert after data transformation');
+      }
+
       // Get the conflict columns based on domain
       let conflictColumns = 'user_id,sale_order_code,item_sku_code';
       if (domain === 'Myntra') {
@@ -360,12 +374,19 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
         conflictColumns = 'user_id,sale_order_code,item_code';
       }
 
+      console.log(`Upserting ${rowsToInsert.length} rows with conflict columns: ${conflictColumns}`);
+      
       // Upsert will automatically handle duplicates based on UNIQUE constraint
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from(tableName)
         .upsert(rowsToInsert, { onConflict: conflictColumns });
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Supabase error for ${tableName}:`, error);
+        throw new Error(`Failed to save to ${domain}: ${error.message}`);
+      }
+
+      console.log(`Successfully saved data for ${domain}. Response:`, data);
     } else {
       // Fallback for unknown domains - use generic table
       const { error } = await supabase
@@ -381,7 +402,10 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
           { onConflict: 'user_id,domain_name' }
         );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error for domain_data:', error);
+        throw new Error(`Failed to save to generic table: ${error.message}`);
+      }
     }
 
     console.log(`Data saved for domain: ${domain} (table: ${tableName})`);
