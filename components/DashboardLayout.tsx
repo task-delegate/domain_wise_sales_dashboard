@@ -6,7 +6,7 @@ import UploadModal from './UploadModal';
 import DeleteDataModal from './DeleteDataModal';
 import PPTGeneratorPage from './PPTGeneratorPage';
 import { AllData, DomainData, OrderData, ColumnMapping } from '../types';
-import { supabase, saveDomainData, loadDomainData, mergeAndDeduplicateData, getUserDomains, deleteDomainData } from '../utils/supabase';
+import { supabase, saveDomainData, loadDomainData, getUserDomains, deleteDomainData } from '../utils/supabase';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
@@ -80,20 +80,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         const existingDomainData = prev[domain];
         const existingData = existingDomainData?.data || [];
 
-        // Use mergeAndDeduplicateData from supabase utils (pass domain for domain-specific logic)
-        const consolidatedData = mergeAndDeduplicateData(existingData, newData, newMapping, domain);
-        const addedCount = consolidatedData.length - existingData.length;
+        // Load ALL data without removing duplicates - keep everything as-is
+        const consolidatedData = [...existingData, ...newData];
+        const totalRows = consolidatedData.length;
 
-        console.log(`Added ${addedCount} new unique rows for domain ${domain}. Total rows: ${consolidatedData.length}`);
+        console.log(`Loaded ${newData.length} new rows (including duplicates). Total rows: ${totalRows}`);
 
         return { ...prev, [domain]: { data: consolidatedData, mapping: newMapping } };
       });
 
-      // Save to Supabase immediately after state update
+      // Save to Supabase - load all data without deduplication for calculation accuracy
       const updatedDomainData = { ...allData[domain], data: newData, mapping: newMapping };
       if (allData[domain]) {
-        const consolidated = mergeAndDeduplicateData(allData[domain].data, newData, newMapping, domain);
-        updatedDomainData.data = consolidated;
+        // Merge all data - don't remove duplicates
+        updatedDomainData.data = [...allData[domain].data, ...newData];
       }
 
       await saveDomainData(userId, domain, updatedDomainData);
