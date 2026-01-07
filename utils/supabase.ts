@@ -353,8 +353,20 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
     
     // For domain-specific tables, we need to transform the data
     if (tableName !== 'domain_data') {
+      // First, deduplicate within the new data batch to prevent "row a second time" error
+      const deduplicatedData = new Map<string, OrderData>();
+      domainData.data.forEach((row: OrderData) => {
+        const uniqueId = getUniqueIdentifier(row, domain, domainData.mapping);
+        if (!deduplicatedData.has(uniqueId)) {
+          deduplicatedData.set(uniqueId, row);
+        }
+      });
+      
+      const uniqueDataArray = Array.from(deduplicatedData.values());
+      console.log(`Deduplicated ${domainData.data.length} rows to ${uniqueDataArray.length} unique rows`);
+
       // Transform and map all columns for the domain
-      const rowsToInsert = domainData.data.map((row: OrderData) => {
+      const rowsToInsert = uniqueDataArray.map((row: OrderData) => {
         return {
           user_id: userId,
           ...transformRowData(row, domain),
