@@ -243,7 +243,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className="flex h-screen bg-gray-900 flex-col md:flex-row">
       <Sidebar 
         domains={SIDEBAR_DOMAINS} 
         activeDomain={activeDomain} 
@@ -253,7 +253,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         activeView={currentView}
         openDeleteModal={() => setIsDeleteModalOpen(true)}
       />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto flex flex-col">
+      <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto flex flex-col">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold text-white">
             {currentView === 'Dashboard' ? `${activeDomain} Dashboard` : 'PPT Generator'}
