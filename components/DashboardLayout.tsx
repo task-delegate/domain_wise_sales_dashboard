@@ -26,11 +26,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState<View>('Dashboard');
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Initialize userId from localStorage or generate a temporary one
+  // Initialize userId from localStorage or generate a proper UUID
   useEffect(() => {
     let storedUserId = localStorage.getItem('userId');
     if (!storedUserId) {
-      storedUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate a proper UUID v4
+      storedUserId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
       localStorage.setItem('userId', storedUserId);
     }
     setUserId(storedUserId);

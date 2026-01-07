@@ -3,7 +3,7 @@
 -- ============================================
 CREATE TABLE IF NOT EXISTS ajio_data (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   
   -- Unique identifiers for deduplication
   sale_order_code TEXT,
@@ -143,7 +143,7 @@ CREATE INDEX idx_ajio_status ON ajio_data(sale_order_status);
 -- ============================================
 CREATE TABLE IF NOT EXISTS myntra_data (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   
   -- Unique identifiers for deduplication
   seller_order_id TEXT,
@@ -230,7 +230,7 @@ CREATE INDEX idx_myntra_order_status ON myntra_data(order_status);
 -- ============================================
 CREATE TABLE IF NOT EXISTS flipkart_data (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   
   -- Unique identifiers for deduplication
   sale_order_code TEXT,
@@ -441,7 +441,7 @@ CREATE INDEX idx_flipkart_city ON flipkart_data(shipping_address_city);
 -- ============================================
 CREATE TABLE IF NOT EXISTS amazon_data (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   
   -- Unique identifiers for deduplication
   sale_order_code TEXT,
