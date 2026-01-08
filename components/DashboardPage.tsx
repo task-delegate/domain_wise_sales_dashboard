@@ -85,48 +85,48 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ domain, domainData }) => 
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-12 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 auto-rows-max">
+        <div className="lg:col-span-12 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <DailyTrendChart data={dailyOrderVolume} title="Transaction Momentum" dataKey="count" color="#3b82f6" />
         </div>
         
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <GenericBarChart data={topBrandsByRevenue} title="Top Brand Performance" dataKey="value" color="#10b981" formatAsCurrency={true}/>
         </div>
         
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <GenericBarChart data={topCancellationReasons} title="Churn Analysis" dataKey="value" color="#f59e0b"/>
         </div>
 
-        <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-4 min-h-[400px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
             <GenericPieChart data={orderStatusDistribution} title="Fullfillment Health" />
         </div>
 
-        <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-4 min-h-[400px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
             <GenericPieChart data={courierUsageShare} title="Courier Distribution" />
         </div>
         
-        <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-4 min-h-[400px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
             <GenericBarChart data={topCitiesByOrderCount} title="Geographic Density" dataKey="value" color="#ec4899" />
         </div>
 
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <GenericBarChart data={topSkusByOrders} title="Top Performing SKUs" dataKey="value" color="#6366f1" />
         </div>
 
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
            <GenericBarChart data={topArticleTypesByOrders} title="Article Categories" dataKey="value" color="#06b6d4" />
         </div>
 
-        <div className="lg:col-span-12 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-12 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <DiscountRevenueChart data={discountVsRevenue} title="Revenue vs. Margin Analysis" />
         </div>
         
-        <div className="lg:col-span-12 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-12 min-h-[450px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
             <GenericBarChart data={orderCountByState} title="State-wise Distribution" dataKey="value" color="#f97316" layout="horizontal" />
         </div>
 
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[400px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <InsightTable 
             data={topCitiesByRevenue} 
             title="Revenue Leaderboard: Cities"
@@ -134,7 +134,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ domain, domainData }) => 
           />
         </div>
         
-        <div className="lg:col-span-6 bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800">
+        <div className="lg:col-span-6 min-h-[400px] bg-slate-900/40 backdrop-blur-sm p-8 rounded-3xl border border-slate-800 min-w-0">
           <InsightTable 
             data={topCancellationReasons} 
             title="Logistics Friction Points"

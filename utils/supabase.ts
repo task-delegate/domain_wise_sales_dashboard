@@ -509,17 +509,37 @@ export const loadDomainData = async (userId: string, domain: string): Promise<Do
     const tableName = getDomainTableName(domain);
 
     if (tableName !== 'domain_data') {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('raw_data')
-        .eq('user_id', userId);
+      // Load all data with pagination to handle >1000 rows
+      let allData: any[] = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      
+      console.log(`📥 Starting paginated load for ${domain}...`);
+      
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('raw_data')
+          .eq('user_id', userId)
+          .range(offset, offset + pageSize - 1);
 
-      if (error && error.code !== 'PGRST116') throw error;
+        if (error && error.code !== 'PGRST116') throw error;
 
-      if (!data || data.length === 0) return null;
+        if (!data || data.length === 0) {
+          hasMore = false;
+        } else {
+          allData = allData.concat(data);
+          console.log(`📥 Loaded page at offset ${offset}: ${data.length} rows (total: ${allData.length})`);
+          hasMore = data.length === pageSize; // If we got full page, there may be more
+          offset += pageSize;
+        }
+      }
+      
+      if (allData.length === 0) return null;
 
       // Reconstruct DomainData from raw_data
-      const orderDataArray = data.map(row => row.raw_data);
+      const orderDataArray = allData.map(row => row.raw_data);
       console.log(`📦 Loaded ${orderDataArray.length} rows from Supabase for ${domain}`);
       
       // Try to get the saved mapping from cache first, then from Supabase

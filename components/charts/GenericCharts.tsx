@@ -33,9 +33,9 @@ export const GenericBarChart: React.FC<GenericBarChartProps> = ({ data, title, d
   const valueFormatter = (value: any) => formatAsCurrency ? `₹${Number(value).toLocaleString('en-IN')}` : Number(value).toLocaleString('en-IN');
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">{title}</h3>
-      <div style={{ width: '100%', height: 400 }}>
+      <div className="w-full flex-1 min-h-0">
         <ResponsiveContainer>
           <BarChart data={data} layout={layout} margin={layout === 'vertical' ? { top: 5, right: 40, left: 100, bottom: 5 } : { top: 5, right: 30, left: 20, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
@@ -77,9 +77,9 @@ export const GenericPieChart: React.FC<GenericPieChartProps> = ({ data, title })
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">{title}</h3>
-            <div style={{ width: '100%', height: 350 }}>
+            <div className="w-full flex-1 min-h-0">
                 <ResponsiveContainer>
                     <PieChart>
                         <Pie 
@@ -115,9 +115,9 @@ interface DailyTrendChartProps {
 export const DailyTrendChart: React.FC<DailyTrendChartProps> = ({ data, title, dataKey, color }) => {
   if (!AreaChart || !data || !data.length) return <div className="text-center text-slate-500 py-12 font-bold uppercase tracking-widest text-xs">No data for {title}.</div>;
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">{title}</h3>
-      <div style={{ width: '100%', height: 350 }}>
+      <div className="w-full flex-1 min-h-0">
         <ResponsiveContainer>
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
@@ -146,9 +146,9 @@ interface DiscountRevenueChartProps {
 export const DiscountRevenueChart: React.FC<DiscountRevenueChartProps> = ({ data, title }) => {
   if (!ComposedChart || !data || !data.length) return <div className="text-center text-slate-500 py-12 font-bold uppercase tracking-widest text-xs">No data for {title}.</div>;
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">{title}</h3>
-      <div style={{ width: '100%', height: 400 }}>
+      <div className="w-full flex-1 min-h-0">
         <ResponsiveContainer>
           <ComposedChart data={data} margin={{top: 20, right: 20, bottom: 80, left: 20}}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
