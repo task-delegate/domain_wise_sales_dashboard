@@ -6,6 +6,17 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+/**
+ * 🔐 IMPORTANT: This system uses Supabase Auth (email/password) for user identification
+ * All queries use auth.uid() to get the current logged-in user's ID from Supabase
+ * RLS (Row-Level Security) policies ensure users can only see their own data
+ * 
+ * When same email + password is used on different devices:
+ * ✅ Same auth.uid() from Supabase Auth
+ * ✅ Same data fetched from all tables
+ * ✅ Same insights and dashboard across devices
+ */
+
 // In-memory cache for domain mappings (for current session)
 const domainMappings: Record<string, ColumnMapping> = {};
 

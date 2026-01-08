@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../utils/supabase';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -8,14 +9,41 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      console.log('Simulating login for:', email);
-      onLogin();
-    } else {
-      setError('Please enter both email and password.');
+    setError('');
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        // Sign Up
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        if (signUpError) throw signUpError;
+        setError('Check your email to confirm account!');
+        setEmail('');
+        setPassword('');
+      } else {
+        // Sign In
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (signInError) throw signInError;
+        console.log('✅ Logged in successfully:', email);
+        onLogin();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+      console.error('Auth error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,12 +77,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             placeholder="Password"
             required
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && (
+            <p className={`text-sm ${error.includes('confirm') ? 'text-green-500' : 'text-red-500'}`}>
+              {error}
+            </p>
+          )}
           <button
             type="submit"
-            className="w-full px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-colors duration-300"
+            disabled={isLoading}
+            className="w-full px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isLoading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+            className="w-full text-sm text-gray-400 hover:text-gray-300 transition-colors"
+          >
+            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </button>
         </form>
       </div>

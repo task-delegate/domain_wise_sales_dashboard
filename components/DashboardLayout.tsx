@@ -26,41 +26,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState<View>('Dashboard');
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Initialize userId from localStorage or generate a proper UUID
+  // Get userId from Supabase Auth (auth.uid())
   useEffect(() => {
-    try {
-      // First, verify localStorage is available
-      const testKey = '__localStorage_test__';
-      localStorage.setItem(testKey, 'test');
-      localStorage.removeItem(testKey);
-    } catch (e) {
-      console.error('⚠️ localStorage is NOT available! Using memory storage only. You may be in Incognito/Private mode.', e);
-      console.warn('To fix: Use regular browsing mode, not Incognito/Private mode.');
-    }
-
-    let storedUserId = localStorage.getItem('userId');
-    console.log('🔍 Checking for stored userId...', storedUserId ? 'FOUND ✓' : 'NOT FOUND');
-    
-    if (!storedUserId) {
-      // Generate a proper UUID v4
-      storedUserId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-      console.log('🆔 Generated new userId:', storedUserId);
-      
+    const loadUser = async () => {
       try {
-        localStorage.setItem('userId', storedUserId);
-        console.log('💾 Saved userId to localStorage ✓');
-      } catch (e) {
-        console.error('❌ Failed to save userId to localStorage:', e);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log('🔐 Using Supabase Auth user_id:', user.id);
+          setUserId(user.id);
+        } else {
+          console.error('❌ No authenticated user found');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Error getting user:', error);
+        setIsLoading(false);
       }
-    } else {
-      console.log('✅ Using existing userId from localStorage:', storedUserId);
-    }
-    
-    setUserId(storedUserId);
+    };
+    loadUser();
   }, []);
 
   // Load data from Supabase when userId is set
