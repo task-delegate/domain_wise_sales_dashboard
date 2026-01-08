@@ -56,7 +56,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ domain, domainData }) => 
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 h-full overflow-y-auto">
       <div className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
           <h2 className="text-sm font-bold text-blue-500 uppercase tracking-[0.3em]">Operational Overview</h2>

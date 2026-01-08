@@ -21,7 +21,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="min-h-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
       <AppContent />
     </div>
   );

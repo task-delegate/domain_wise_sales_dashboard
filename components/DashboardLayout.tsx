@@ -276,7 +276,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         activeView={currentView}
         openDeleteModal={() => setIsDeleteModalOpen(true)}
       />
-      <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto flex flex-col">
+      <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto flex flex-col min-h-0">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold text-white">
             {currentView === 'Dashboard' ? `${activeDomain} Dashboard` : 'PPT Generator'}
@@ -288,7 +288,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
             Upload New Data
           </button>
         </header>
-        <div className="flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {currentView === 'Dashboard' ? (
             <DashboardPage key={activeDomain} domain={activeDomain} domainData={currentDomainData} />
           ) : (
