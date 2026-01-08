@@ -52,6 +52,10 @@ export async function analyzeCsvData(headers: string[], sampleData: OrderData[])
     const parsedText = (message.choices[0]?.message?.content || '').trim();
     console.log("Groq response:", parsedText);
     
+    if (!parsedText) {
+      throw new Error("Groq API returned empty response. Please try again.");
+    }
+    
     // Remove markdown code block wrapper if present
     let cleanedText = parsedText;
     if (cleanedText.startsWith('```json')) {
@@ -60,7 +64,13 @@ export async function analyzeCsvData(headers: string[], sampleData: OrderData[])
       cleanedText = cleanedText.replace(/^```\n?/, '').replace(/\n?```$/, '');
     }
     
-    const mapping = JSON.parse(cleanedText);
+    let mapping;
+    try {
+      mapping = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("Failed to parse Groq response as JSON:", cleanedText);
+      throw new Error("AI response could not be parsed. The API may be overloaded or your headers may be unclear. Please try again.");
+    }
     
     const finalMapping: ColumnMapping = {
         date: null, customer: null, item: null, quantity: null, price: null, city: null, state: null, zipcode: null, revenue: null, brand: null,
@@ -75,9 +85,10 @@ export async function analyzeCsvData(headers: string[], sampleData: OrderData[])
         }
     }
     return finalMapping;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing CSV data with Groq:", error);
-    throw new Error("AI analysis of the file failed.");
+    const errorMessage = error?.message || "AI analysis of the file failed.";
+    throw new Error(errorMessage);
   }
 }
 
