@@ -6,6 +6,17 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Store domain mapping metadata
+const domainMappings: Record<string, ColumnMapping> = {};
+
+export const saveDomainMapping = (domain: string, mapping: ColumnMapping) => {
+  domainMappings[domain] = mapping;
+};
+
+export const getDomainMapping = (domain: string): ColumnMapping | null => {
+  return domainMappings[domain] || null;
+};
+
 // Map domain names to table names
 const getDomainTableName = (domain: string): string => {
   const tableMap: { [key: string]: string } = {
@@ -351,6 +362,9 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
     const tableName = getDomainTableName(domain);
     console.log(`Saving ${domainData.data.length} rows to table: ${tableName}`);
     
+    // Save the mapping for later retrieval
+    saveDomainMapping(domain, domainData.mapping);
+    
     // For domain-specific tables, we need to transform the data
     if (tableName !== 'domain_data') {
       // Load ALL data without deduplication - keep everything for accurate calculations
@@ -359,10 +373,11 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
       
       console.log(`Loading ${allDataRows.length} rows (all data including duplicates for calculation accuracy)`);
 
-      // Transform and map all columns for the domain
+      // Store original data with mapping so we can reconstruct it
       const rowsToInsert = allDataRows.map((row: OrderData) => {
         return {
           user_id: userId,
+          raw_data: row, // Keep original data for reconstruction
           ...transformRowData(row, domain),
         };
       });
@@ -442,29 +457,32 @@ export const loadDomainData = async (userId: string, domain: string): Promise<Do
       // Reconstruct DomainData from raw_data
       const orderDataArray = data.map(row => row.raw_data);
       
-      // Create a generic mapping (the raw_data already has original column names)
-      const mapping: ColumnMapping = {
-        date: 'Order Date as dd/mm/yyyy hh:MM:ss',
-        customer: 'customer_name',
-        item: 'SKU Name',
-        quantity: 'quantity',
-        price: 'Selling Price',
-        revenue: 'Total Price',
-        city: domain === 'Flipkart' || domain === 'Amazon' ? 'Shipping Address City' : 'city',
-        state: domain === 'Flipkart' || domain === 'Amazon' ? 'Shipping Address State' : 'state',
-        zipcode: domain === 'Flipkart' || domain === 'Amazon' ? 'Shipping Address Pincode' : 'zipcode',
-        brand: 'Item Type Brand',
-        orderStatus: 'Sale Order Status',
-        cancellationReason: 'Cancellation Reason',
-        discount: 'Discount',
-        courier: 'Shipping Courier',
-        sku: 'SKU Name',
-        articleType: 'article type',
-        deliveredDate: 'delivered on',
-        cancelledDate: 'cancelled on',
-        returnDate: 'return creation date',
-        orderId: domain === 'Myntra' ? 'seller order id' : 'Sale Order Code',
-      };
+      // Try to get the saved mapping, otherwise use a generic one
+      let mapping = getDomainMapping(domain);
+      if (!mapping) {
+        mapping = {
+          date: 'date',
+          customer: 'customer',
+          item: 'item',
+          quantity: 'quantity',
+          price: 'price',
+          revenue: 'revenue',
+          city: 'city',
+          state: 'state',
+          zipcode: 'zipcode',
+          brand: 'brand',
+          orderStatus: 'orderStatus',
+          cancellationReason: 'cancellationReason',
+          discount: 'discount',
+          courier: 'courier',
+          sku: 'sku',
+          articleType: 'articleType',
+          deliveredDate: 'deliveredDate',
+          cancelledDate: 'cancelledDate',
+          returnDate: 'returnDate',
+          orderId: 'orderId',
+        };
+      }
 
       return {
         data: orderDataArray,
