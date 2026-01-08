@@ -28,7 +28,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
 
   // Initialize userId from localStorage or generate a proper UUID
   useEffect(() => {
+    try {
+      // First, verify localStorage is available
+      const testKey = '__localStorage_test__';
+      localStorage.setItem(testKey, 'test');
+      localStorage.removeItem(testKey);
+    } catch (e) {
+      console.error('⚠️ localStorage is NOT available! Using memory storage only. You may be in Incognito/Private mode.', e);
+      console.warn('To fix: Use regular browsing mode, not Incognito/Private mode.');
+    }
+
     let storedUserId = localStorage.getItem('userId');
+    console.log('🔍 Checking for stored userId...', storedUserId ? 'FOUND ✓' : 'NOT FOUND');
+    
     if (!storedUserId) {
       // Generate a proper UUID v4
       storedUserId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -36,8 +48,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
-      localStorage.setItem('userId', storedUserId);
+      console.log('🆔 Generated new userId:', storedUserId);
+      
+      try {
+        localStorage.setItem('userId', storedUserId);
+        console.log('💾 Saved userId to localStorage ✓');
+      } catch (e) {
+        console.error('❌ Failed to save userId to localStorage:', e);
+      }
+    } else {
+      console.log('✅ Using existing userId from localStorage:', storedUserId);
     }
+    
     setUserId(storedUserId);
   }, []);
 
@@ -47,6 +69,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
 
     const loadAllData = async () => {
       try {
+        console.log('📊 Loading data for userId:', userId);
         const domains = await getUserDomains(userId);
         const loadedData: AllData = {};
 
@@ -58,7 +81,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
         }
 
         setAllData(loadedData);
-        console.log(`Loaded data for ${domains.length} domains from Supabase`);
+        console.log(`✅ Loaded data for ${domains.length} domains from Supabase:`, domains);
       } catch (error) {
         console.error("Could not load data from Supabase:", error);
       } finally {
