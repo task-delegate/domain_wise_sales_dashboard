@@ -3,9 +3,15 @@ import { ColumnMapping, OrderData, PptSlide, Kpi } from '../types';
 
 export async function analyzeCsvData(headers: string[], sampleData: OrderData[]): Promise<ColumnMapping> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  
   if (!apiKey) {
-    throw new Error("Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local");
+    throw new Error("Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local file. Get a free key from https://console.groq.com/keys");
   }
+  
+  if (apiKey.length < 20 || !apiKey.startsWith('gsk_')) {
+    throw new Error("Invalid Groq API key format. Key should start with 'gsk_'. Get a fresh key from https://console.groq.com/keys");
+  }
+  
   const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
 
   const prompt = `
@@ -101,9 +107,15 @@ export async function generatePptInsights(
   year: number
 ): Promise<PptSlide[]> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  
   if (!apiKey) {
-    throw new Error("Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local");
+    throw new Error("Groq API key not found. Please set VITE_GROQ_API_KEY in .env.local file. Get a free key from https://console.groq.com/keys");
   }
+  
+  if (apiKey.length < 20 || !apiKey.startsWith('gsk_')) {
+    throw new Error("Invalid Groq API key format. Key should start with 'gsk_'. Get a fresh key from https://console.groq.com/keys");
+  }
+  
   const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true });
 
   const prompt = `
