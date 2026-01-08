@@ -20,6 +20,7 @@ export const getDomainMapping = (domain: string): ColumnMapping | null => {
 // Save mapping to Supabase for persistence across sessions
 export const saveMappingToSupabase = async (userId: string, domain: string, mapping: ColumnMapping) => {
   try {
+    console.log(`💾 Attempting to save mapping for ${domain} to Supabase...`);
     const { error } = await supabase
       .from('column_mappings')
       .upsert(
@@ -33,19 +34,21 @@ export const saveMappingToSupabase = async (userId: string, domain: string, mapp
       );
 
     if (error) {
-      console.error('Error saving mapping to Supabase:', error);
+      console.error('❌ Error saving mapping to Supabase:', error);
+      console.warn('⚠️ Mapping table may not exist. Falling back to in-memory cache.');
       // Don't throw - mapping cache will still work
     } else {
       console.log(`✅ Saved column mapping for ${domain} to Supabase`);
     }
   } catch (err) {
-    console.error('Failed to save mapping:', err);
+    console.error('❌ Failed to save mapping:', err);
   }
 };
 
 // Load mapping from Supabase
 export const loadMappingFromSupabase = async (userId: string, domain: string): Promise<ColumnMapping | null> => {
   try {
+    console.log(`🔍 Attempting to load mapping for ${domain} from Supabase...`);
     const { data, error } = await supabase
       .from('column_mappings')
       .select('mapping')
@@ -53,19 +56,24 @@ export const loadMappingFromSupabase = async (userId: string, domain: string): P
       .eq('domain', domain)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error loading mapping from Supabase:', error);
+    if (error) {
+      if (error.code === 'PGRST116') {
+        console.warn(`⚠️ No mapping found for ${domain} in Supabase (table may not exist)`);
+      } else {
+        console.error('❌ Error loading mapping from Supabase:', error);
+      }
       return null;
     }
 
     if (data && data.mapping) {
-      console.log(`✅ Loaded column mapping for ${domain} from Supabase`);
+      console.log(`✅ Loaded column mapping for ${domain} from Supabase:`, data.mapping);
       return data.mapping as ColumnMapping;
     }
 
+    console.warn(`⚠️ No mapping data returned for ${domain}`);
     return null;
   } catch (err) {
-    console.error('Failed to load mapping:', err);
+    console.error('❌ Failed to load mapping:', err);
     return null;
   }
 };
@@ -512,16 +520,21 @@ export const loadDomainData = async (userId: string, domain: string): Promise<Do
 
       // Reconstruct DomainData from raw_data
       const orderDataArray = data.map(row => row.raw_data);
+      console.log(`📦 Loaded ${orderDataArray.length} rows from Supabase for ${domain}`);
       
       // Try to get the saved mapping from cache first, then from Supabase
       let mapping = getDomainMapping(domain);
       if (!mapping) {
+        console.log(`🔍 Mapping not in cache for ${domain}, trying Supabase...`);
         // Try to load from Supabase
         mapping = await loadMappingFromSupabase(userId, domain);
+      } else {
+        console.log(`✅ Using cached mapping for ${domain}:`, mapping);
       }
       
       if (!mapping) {
         // Use a generic fallback mapping
+        console.warn(`⚠️ FALLBACK: Using generic mapping for ${domain}. This may cause incorrect KPIs!`);
         mapping = {
           date: 'date',
           customer: 'customer',
@@ -544,6 +557,9 @@ export const loadDomainData = async (userId: string, domain: string): Promise<Do
           returnDate: 'returnDate',
           orderId: 'orderId',
         };
+        console.log(`Using fallback mapping:`, mapping);
+      } else {
+        console.log(`✅ Successfully loaded correct mapping for ${domain}:`, mapping);
       }
 
       return {
