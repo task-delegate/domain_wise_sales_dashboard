@@ -372,15 +372,7 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
         throw new Error('No rows to insert after data transformation');
       }
 
-      // Get the conflict columns based on domain
-      let conflictColumns = 'user_id,sale_order_code,item_sku_code';
-      if (domain === 'Myntra') {
-        conflictColumns = 'user_id,seller_order_id,seller_sku_code,size';
-      } else if (domain === 'AJIO') {
-        conflictColumns = 'user_id,sale_order_code,item_code';
-      }
-
-      console.log(`Upserting ${rowsToInsert.length} rows with conflict columns: ${conflictColumns}`);
+      console.log(`Inserting ${rowsToInsert.length} rows to ${tableName}`);
       
       // Batch insert in chunks to avoid timeout - Supabase has request limits
       const BATCH_SIZE = 500;
@@ -388,11 +380,11 @@ export const saveDomainData = async (userId: string, domain: string, domainData:
       
       for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
         const batch = rowsToInsert.slice(i, i + BATCH_SIZE);
-        console.log(`Upserting batch ${Math.floor(i / BATCH_SIZE) + 1} with ${batch.length} rows...`);
+        console.log(`Inserting batch ${Math.floor(i / BATCH_SIZE) + 1} with ${batch.length} rows...`);
         
         const { error, data } = await supabase
           .from(tableName)
-          .upsert(batch, { onConflict: conflictColumns });
+          .insert(batch);
 
         if (error) {
           console.error(`Supabase error for ${tableName} batch:`, error);
