@@ -7,6 +7,9 @@ const App = () => {
 
   const handleLogin = useCallback(() => setIsAuthenticated(true), []);
   const handleLogout = useCallback(() => {
+    // Note: userId is intentionally persisted in localStorage across sign out/in
+    // This ensures users see their data on sign-in without losing it
+    // If users want a fresh session, they can manually clear localStorage
     setIsAuthenticated(false);
   }, []);
 
